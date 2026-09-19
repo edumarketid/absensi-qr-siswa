@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Absensi QR Code Siswa</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    :root {
+      --primary: #1e40af;
+      --primary-dark: #1e3a8a;
+      --secondary: #0f766e;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --warning: #d97706;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 70px; }
+    
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header h1 { font-size: 18px; font-weight: 600; }
+    .status-badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .status-online { background: #bbf7d0; color: #14532d; }
+    .status-offline { background: #fecaca; color: #7f1d1d; }
+
+    .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+    .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+    
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text-muted); }
+    .form-group input, .form-group select {
+      width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none;
+    }
+    .btn {
+      width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-block; text-align: center;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: var(--secondary); color: white; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+
+    /* Bottom Navigation */
+    nav {
+      position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; border-top: 1px solid #e2e8f0; z-index: 100;
+    }
+    nav button {
+      flex: 1; padding: 10px 0; border: none; background: none; font-size: 11px; color: var(--text-muted); font-weight: 600;
+    }
+    nav button.active { color: var(--primary); }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Scanner UI */
+    #reader { width: 100%; border-radius: 12px; overflow: hidden; background: #000; }
+    .queue-counter { background: var(--warning); color: white; padding: 8px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 12px; font-size: 13px; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    table th, table td { padding: 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    table th { background: #f1f5f9; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 id="app-title">Absensi QR Siswa</h1>
+    <span id="net-status" class="status-badge status-online">Online</span>
+  </header>
+
+  <div class="container">
+
+    <!-- LOGIN VIEW -->
+    <div id="view-login" class="view active">
+      <div class="card">
+        <h2 style="font-size: 18px; margin-bottom: 12px; text-align: center;">Login Petugas</h2>
+        <div class="form-group">
+          <label>URL API GAS Backend</label>
+          <input type="text" id="cfg-gas-url" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+        <div class="form-group">
+          <label>User ID / No HP</label>
+          <input type="text" id="login-id" placeholder="Contoh: ADM001">
+        </div>
+        <div class="form-group">
+          <label>PIN (6 Angka)</label>
+          <input type="password" id="login-pin" maxlength="6" placeholder="******">
+        </div>
+        <button class="btn btn-primary" onclick="doLogin()">MASUK APLIKASI</button>
+      </div>
+    </div>
+
+    <!-- SCANNER VIEW -->
+    <div id="view-scan" class="view">
+      <div id="queue-box" class="queue-counter" style="display:none;">
+        <span id="queue-count">0</span> Data Absensi Lokal (Belum Sync)
+        <button onclick="syncQueue()" style="margin-left:8px; padding:2px 8px; border-radius:4px; border:none; cursor:pointer;">Sync Sekarang</button>
+      </div>
+      <div class="card">
+        <h2 style="font-size: 16px; margin-bottom: 8px;">Kamera Scan QR</h2>
+        <div id="reader"></div>
+        <div style="margin-top: 12px; display: flex; gap: 8px;">
+          <button class="btn btn-secondary" onclick="startScanner()">Buka Kamera</button>
+          <button class="btn btn-danger" onclick="stopScanner()">Tutup Kamera</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size: 14px; margin-bottom: 8px;">Fallback Manual Input</h3>
+        <div style="display:flex; gap: 8px;">
+          <input type="text" id="manual-qr-input" placeholder="Masukkan ID/Token Siswa" style="flex:1; padding:8px; border-radius:6px; border:1px solid #ccc;">
+          <button class="btn btn-primary" style="width: auto;" onclick="processManualScan()">Submit</button>
+        </div>
+      </div>
+
+      <div id="scan-result-card" class="card" style="display:none; background: #e0f2fe; border-color: #bae6fd;">
+        <h3 style="font-size: 14px; color: #0369a1;" id="res-nama">Nama Siswa</h3>
+        <p style="font-size: 12px; color: #075985;" id="res-detail">Kelas | Status</p>
+      </div>
+    </div>
+
+    <!-- MASTER SISWA VIEW -->
+    <div id="view-siswa" class="view">
+      <div class="card">
+        <h2 style="font-size: 16px; margin-bottom: 8px;">Tambah / Import Siswa</h2>
+        <button class="btn btn-secondary" style="margin-bottom:8px;" onclick="syncMasterSiswa()">Sync Master Siswa dari Server</button>
+        
+        <div class="form-group">
+          <label>Import Data Siswa (File CSV)</label>
+          <input type="file" id="csv-file" accept=".csv">
+        </div>
+        <button class="btn btn-success" onclick="importCSV()">Proses Import CSV</button>
+        <p style="font-size:11px; color:var(--text-muted); margin-top:4px;">Format CSV: ID_SISWA,NISN,NAMA,KELAS,JURUSAN</p>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size: 14px; margin-bottom: 8px;">Daftar Siswa (Lokal DB)</h3>
+        <input type="text" id="search-siswa" placeholder="Cari nama/kelas..." onkeyup="renderSiswaList()" style="padding:8px; width:100%; margin-bottom:8px; border-radius:6px; border:1px solid #ccc;">
+        <div style="max-height: 250px; overflow-y: auto;">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Nama</th><th>Kelas</th></tr>
+            </thead>
+            <tbody id="table-siswa-body">
+              <tr><td colspan="3" style="text-align:center;">Belum ada data siswa.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAVBAR -->
+  <nav id="bottom-nav" style="display:none;">
+    <button onclick="switchView('scan')" id="nav-scan" class="active">SCAN QR</button>
+    <button onclick="switchView('siswa')" id="nav-siswa">SISWA</button>
+    <button onclick="doLogout()">LOGOUT</button>
+  </nav>
+
+  <script>
+    // ==========================================
+    // 1. INDEXEDDB ENGINE
+    // ==========================================
+    const DB_NAME = "AbsensiQRDB";
+    const DB_VERSION = 1;
+    let db = null;
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains("students")) {
+            database.createObjectStore("students", { keyPath: "ID_SISWA" });
+          }
+          if (!database.objectStoreNames.contains("queue")) {
+            database.createObjectStore("queue", { autoIncrement: true });
+          }
+          if (!database.objectStoreNames.contains("settings")) {
+            database.createObjectStore("settings", { keyPath: "KEY" });
+          }
+        };
+        req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+        req.onerror = (e) => reject("Error opening IndexedDB");
+      });
+    }
+
+    function dbPut(storeName, data) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, "readwrite");
+        const store = tx.objectStore(storeName);
+        if (Array.isArray(data)) {
+          data.forEach(item => store.put(item));
+        } else {
+          store.put(data);
+        }
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(false);
+      });
+    }
+
+    function dbGetAll(storeName) {
+      return new Promise((resolve) => {
+        const tx = db.transaction(storeName, "readonly");
+        const store = tx.objectStore(storeName);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+      });
+    }
+
+    function dbClear(storeName) {
+      return new Promise((resolve) => {
+        const tx = db.transaction(storeName, "readwrite");
+        const store = tx.objectStore(storeName);
+        store.clear();
+        tx.oncomplete = () => resolve(true);
+      });
+    }
+
+    // ==========================================
+    // 2. STATE & UI CONTROL
+    // ==========================================
+    let html5QrcodeScanner = null;
+
+    window.addEventListener("load", async () => {
+      await initDB();
+      checkNetworkStatus();
+      window.addEventListener("online", checkNetworkStatus);
+      window.addEventListener("offline", checkNetworkStatus);
+
+      const savedUrl = localStorage.getItem("GAS_URL");
+      if (savedUrl) document.getElementById("cfg-gas-url").value = savedUrl;
+
+      const token = localStorage.getItem("AUTH_TOKEN");
+      if (token) {
+        showLoggedInUI();
+      } else {
+        switchView("login");
+      }
+      updateQueueCounter();
+    });
+
+    function checkNetworkStatus() {
+      const badge = document.getElementById("net-status");
+      if (navigator.onLine) {
+        badge.textContent = "Online";
+        badge.className = "status-badge status-online";
+      } else {
+        badge.textContent = "Offline";
+        badge.className = "status-badge status-offline";
+      }
+    }
+
+    function switchView(viewName) {
+      document.querySelectorAll(".view").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll("nav button").forEach(el => el.classList.remove("active"));
+      
+      document.getElementById("view-" + viewName).classList.add("active");
+      const navBtn = document.getElementById("nav-" + viewName);
+      if (navBtn) navBtn.classList.add("active");
+
+      if (viewName === "siswa") renderSiswaList();
+    }
+
+    function showLoggedInUI() {
+      document.getElementById("bottom-nav").style.display = "flex";
+      switchView("scan");
+    }
+
+    // ==========================================
+    // 3. AUTHENTICATION (LOGIN/LOGOUT)
+    // ==========================================
+    async function doLogin() {
+      const url = document.getElementById("cfg-gas-url").value.trim();
+      const identifier = document.getElementById("login-id").value.trim();
+      const pin = document.getElementById("login-pin").value.trim();
+
+      if (!url || !identifier || !pin) {
+        alert("Semua kolom login wajib diisi!");
+        return;
+      }
+
+      localStorage.setItem("GAS_URL", url);
+
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "LOGIN",
+            payload: { identifier, pin, deviceId: "PWA_CLIENT", deviceName: navigator.userAgent }
+          })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          localStorage.setItem("AUTH_TOKEN", data.token);
+          alert("Login Berhasil!");
+          showLoggedInUI();
+          syncMasterSiswa(); // Auto-sync master data setelah login
+        } else {
+          alert("Login Gagal: " + data.message);
+        }
+      } catch (err) {
+        alert("Gagal koneksi ke server GAS. Pastikan URL benar atau internet aktif saat login pertama.");
+      }
+    }
+
+    function doLogout() {
+      if (confirm("Apakah anda yakin ingin keluar?")) {
+        localStorage.removeItem("AUTH_TOKEN");
+        location.reload();
+      }
+    }
+
+    // ==========================================
+    // 4. MASTER SISWA (SYNC & IMPORT CSV)
+    // ==========================================
+    async function syncMasterSiswa() {
+      const url = localStorage.getItem("GAS_URL");
+      const token = localStorage.getItem("AUTH_TOKEN");
+      if (!url || !token) return;
+
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          body: JSON.stringify({ action: "FETCH_INITIAL_DATA", token: token })
+        });
+        const result = await res.json();
+
+        if (result.success && result.data.students) {
+          await dbPut("students", result.data.students);
+          alert(`Master data disinkronkan: ${result.data.students.length} siswa.`);
+          renderSiswaList();
+        }
+      } catch (e) {
+        alert("Gagal sinkronisasi master data (Mode Offline). Menggunakan DB lokal.");
+      }
+    }
+
+    async function importCSV() {
+      const fileInput = document.getElementById("csv-file");
+      if (!fileInput.files.length) {
+        alert("Pilih file CSV terlebih dahulu!");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = async (e) => {
+        const text = e.target.result;
+        const lines = text.split("\n");
+        let studentsList = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          const cols = line.split(",");
+          if (cols.length >= 4) {
+            studentsList.push({
+              ID_SISWA: cols[0].trim(),
+              NISN: cols[1].trim(),
+              NAMA: cols[2].trim(),
+              KELAS: cols[3].trim(),
+              JURUSAN: cols[4] ? cols[4].trim() : "",
+              STATUS: "AKTIF",
+              QR_TOKEN: cols[0].trim(),
+              UPDATED_AT: new Date().toISOString()
+            });
+          }
+        }
+
+        if (studentsList.length > 0) {
+          await dbPut("students", studentsList);
+          alert(`Berhasil mengimpor ${studentsList.length} siswa ke IndexedDB lokal!`);
+          renderSiswaList();
+        } else {
+          alert("Gagal mengimpor. Cek format file CSV.");
+        }
+      };
+
+      reader.readAsText(file);
+    }
+
+    async function renderSiswaList() {
+      const students = await dbGetAll("students");
+      const keyword = document.getElementById("search-siswa").value.toLowerCase();
+      const tbody = document.getElementById("table-siswa-body");
+      tbody.innerHTML = "";
+
+      const filtered = students.filter(s => 
+        (s.NAMA && s.NAMA.toLowerCase().includes(keyword)) || 
+        (s.KELAS && s.KELAS.toLowerCase().includes(keyword)) ||
+        (s.ID_SISWA && s.ID_SISWA.toLowerCase().includes(keyword))
+      );
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Data siswa kosong.</td></tr>`;
+        return;
+      }
+
+      filtered.slice(0, 50).forEach(s => { // Limiter UI 50 item
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td><b>${s.ID_SISWA}</b></td><td>${s.NAMA}</td><td>${s.KELAS}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ==========================================
+    // 5. SCANNER & OFFLINE QUEUE
+    // ==========================================
+    function startScanner() {
+      if (html5QrcodeScanner) stopScanner();
+
+      html5QrcodeScanner = new Html5Qrcode("reader");
+      html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => processAttendanceScan(decodedText),
+        (errorMessage) => {}
+      ).catch(err => alert("Gagal membuka kamera: " + err));
+    }
+
+    function stopScanner() {
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.stop().then(() => {
+          html5QrcodeScanner.clear();
+          html5QrcodeScanner = null;
+        });
+      }
+    }
+
+    function processManualScan() {
+      const val = document.getElementById("manual-qr-input").value.trim();
+      if (val) {
+        processAttendanceScan(val);
+        document.getElementById("manual-qr-input").value = "";
+      }
+    }
+
+    async function processAttendanceScan(qrToken) {
+      const students = await dbGetAll("students");
+      const student = students.find(s => s.ID_SISWA === qrToken || s.QR_TOKEN === qrToken);
+
+      if (!student) {
+        alert("Siswa TIDAK ditemukan di Database!");
+        return;
+      }
+
+      const now = new Date();
+      const jam = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+      const tanggal = now.toISOString().split("T")[0];
+
+      // Aturan Waktu Absensi Sederhana
+      let tipeScan = "PAGI";
+      let status = "HADIR";
+      let statusApel = "HADIR";
+
+      if (jam > "07:15" && jam <= "07:30") {
+        status = "HADIR"; statusApel = "ALPA"; // Toleransi
+      } else if (jam > "07:30" && jam <= "10:30") {
+        status = "TERLAMBAT"; statusApel = "ALPA";
+      } else if (jam > "10:30") {
+        tipeScan = "SIANG"; status = "HADIR"; statusApel = "HADIR";
+      }
+
+      const attendanceEvent = {
+        idSiswa: student.ID_SISWA,
+        tanggal: tanggal,
+        waktu: jam,
+        tipeScan: tipeScan,
+        status: status,
+        statusApel: statusApel,
+        scannedAt: now.toISOString()
+      };
+
+      // Simpan ke Queue IndexedDB
+      await dbPut("queue", attendanceEvent);
+
+      // Tampilkan Feedback UI
+      document.getElementById("scan-result-card").style.display = "block";
+      document.getElementById("res-nama").textContent = student.NAMA;
+      document.getElementById("res-detail").textContent = `${student.KELAS} | ${tipeScan}: ${status} (${jam})`;
+
+      // Feedback Vibrasi
+      if (navigator.vibrate) navigator.vibrate(200);
+
+      updateQueueCounter();
+
+      // Jika Online, Auto Sync
+      if (navigator.onLine) syncQueue();
+    }
+
+    async function updateQueueCounter() {
+      const queue = await dbGetAll("queue");
+      const box = document.getElementById("queue-box");
+      const countEl = document.getElementById("queue-count");
+
+      if (queue.length > 0) {
+        box.style.display = "block";
+        countEl.textContent = queue.length;
+      } else {
+        box.style.display = "none";
+      }
+    }
+
+    async function syncQueue() {
+      if (!navigator.onLine) {
+        alert("Internet tidak aktif! Data tersimpan di antrean lokal.");
+        return;
+      }
+
+      const queue = await dbGetAll("queue");
+      if (queue.length === 0) return;
+
+      const url = localStorage.getItem("GAS_URL");
+      const token = localStorage.getItem("AUTH_TOKEN");
+
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "SYNC_BATCH",
+            token: token,
+            payload: { items: queue, deviceId: "PWA_CLIENT" }
+          })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          await dbClear("queue");
+          updateQueueCounter();
+          alert(`Sinkronisasi Sukses: ${data.processed} data terkirim!`);
+        }
+      } catch (err) {
+        console.log("Gagal sync, data tersimpan di lokal.");
+      }
+    }
+  </script>
+</body>
+</html>
