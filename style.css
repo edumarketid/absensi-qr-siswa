@@ -1,0 +1,423 @@
+/* ==========================================================================
+   1. GLOBAL & BASE STYLES (DARI INDEX.HTML)
+   ========================================================================== */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  background-color: #f1f5f9;
+  color: #172033;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+#reader video {
+  object-fit: cover !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 1rem;
+}
+
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s infinite ease-in-out;
+}
+
+/* ==========================================================================
+   2. STYLES CETAK KARTU QR (DARI KARTUQRCODE.HTML)
+   ========================================================================== */
+.card-preview-wrap {
+  margin-top: 14px;
+  background: #fff;
+  border: 1px solid #dbe4ef;
+  border-radius: 15px;
+  padding: 14px;
+  box-shadow: 0 5px 20px #0f28500d;
+  overflow-x: auto;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, 85.6mm);
+  gap: 2mm;
+  justify-content: center;
+}
+
+.card {
+  width: 85.6mm;
+  height: 53.98mm;
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  flex: none;
+  color: var(--ink, #0b2c63);
+  border: 1.3mm solid var(--accent, #0b3b82);
+  border-radius: 4mm;
+  box-shadow: 0 1.5mm 4mm rgba(15, 23, 42, 0.18);
+  page-break-inside: avoid;
+  box-sizing: border-box;
+}
+
+.card:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 22mm;
+  height: 20mm;
+  background: var(--accent, #0b3b82);
+  clip-path: polygon(0 0, 100% 0, 42% 100%, 0 100%);
+}
+
+.card:after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 22mm;
+  height: 18mm;
+  background: var(--accent, #0b3b82);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.accent-stripe {
+  position: absolute;
+  left: 4mm;
+  top: 0;
+  width: 3mm;
+  height: 20mm;
+  background: var(--secondary, #f5b700);
+  transform: skewX(-18deg);
+  z-index: 2;
+}
+
+.logo {
+  position: absolute;
+  top: 2.5mm;
+  width: 13mm;
+  height: 13mm;
+  object-fit: contain;
+  z-index: 3;
+}
+.logo.left { left: 5mm; }
+.logo.right { right: 5mm; }
+
+.school {
+  position: absolute;
+  top: 2.8mm;
+  left: 19mm;
+  right: 19mm;
+  text-align: center;
+  font-size: 4.1mm;
+  line-height: 1.05;
+  font-weight: 900;
+  color: var(--ink, #0b2c63);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 3;
+}
+
+.line {
+  position: absolute;
+  top: 10.5mm;
+  left: 17mm;
+  width: 8mm;
+  height: .5mm;
+  background: var(--secondary, #f5b700);
+  z-index: 3;
+}
+.line.right { left: auto; right: 17mm; }
+
+.title {
+  position: absolute;
+  top: 10mm;
+  left: 19mm;
+  right: 19mm;
+  height: 7mm;
+  background: var(--accent, #0b3b82);
+  border-radius: 5mm;
+  text-align: center;
+  color: #fff;
+  font-size: 3.1mm;
+  font-weight: 900;
+  line-height: 7mm;
+  z-index: 3;
+}
+
+.photo {
+  position: absolute;
+  left: 3.8mm;
+  top: 18.2mm;
+  width: 17mm;
+  height: 23mm;
+  border: 0.5mm solid var(--accent, #0b3b82);
+  border-radius: 2mm;
+  padding: 1mm;
+  z-index: 3;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.photo-in {
+  width: 100%;
+  height: 100%;
+  border: 0.3mm solid #cbd5e1;
+  border-radius: 1.5mm;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #789;
+  font-size: 3mm;
+  font-weight: 800;
+}
+
+.details {
+  position: absolute;
+  left: 23.5mm;
+  top: 17.8mm;
+  right: 25mm;
+  z-index: 3;
+}
+
+.lbl {
+  font-size: 1.85mm;
+  font-weight: 900;
+  color: var(--accent, #0b3b82);
+  margin-bottom: .3mm;
+}
+
+.val {
+  font-size: 2.2mm;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 1.4mm;
+  white-space: nowrap;
+  overflow: visible;
+  line-height: 1.0;
+  letter-spacing: -.03mm;
+}
+.val.kelas { font-size: 2.0mm; letter-spacing: -.05mm; }
+.val.ttl { font-size: 1.95mm; letter-spacing: -.05mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.val.nama { font-size: 2.25mm; white-space: normal; overflow-wrap: break-word; line-height: 1.0; max-height: 4.6mm; overflow: hidden; }
+
+.qr {
+  position: absolute;
+  right: 3.7mm;
+  top: 18.4mm;
+  width: 25mm;
+  height: 25mm;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+}
+.qr canvas, .qr img { width: 25mm !important; height: 25mm !important; }
+
+.footer-left { position: absolute; left: 4mm; bottom: 2.6mm; font-size: 2.1mm; color: #64748b; z-index: 4; }
+.footer-right { position: absolute; right: 4mm; bottom: 2.6mm; font-size: 2.1mm; color: #64748b; z-index: 4; }
+
+.frame-ganda { border: 1.3mm solid var(--accent, #0b3b82); }
+.frame-ganda .inner-frame { position: absolute; inset: 1.5mm; border: .35mm solid var(--secondary, #f5b700); border-radius: 3mm; z-index: 1; }
+.frame-tunggal { border: 1.1mm solid var(--accent, #0b3b82); border-radius: 2mm; }
+.frame-sudut { border: 1.1mm solid var(--accent, #0b3b82); border-radius: 4mm; }
+.frame-minimalis { border: .45mm solid #cbd5e1; border-radius: 1.5mm; }
+
+.theme-biru { --accent: #0b3b82; --secondary: #f5b700; --ink: #0b2c63; }
+.theme-hijau { --accent: #087443; --secondary: #eab308; --ink: #075331; }
+.theme-merah { --accent: #a61b1b; --secondary: #f59e0b; --ink: #721c1c; }
+.theme-ungu { --accent: #5425a8; --secondary: #f59e0b; --ink: #3b1b78; }
+.theme-emas { --accent: #9a6a00; --secondary: #d4a72c; --ink: #624500; }
+.theme-hitam { --accent: #111827; --secondary: #94a3b8; --ink: #111827; }
+
+/* ==========================================================================
+   3. STYLES LAPORAN REKAP ABSENSI (DARI LAPORAN.HTML)
+   ========================================================================== */
+.report-list {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.report-item {
+  border: 1px solid #dbe4ef;
+  border-radius: 12px;
+  padding: 10px 6px;
+  background: #f8fafc;
+  cursor: pointer;
+  text-align: center;
+  font-weight: 800;
+  font-size: 11px;
+  color: #334155;
+  transition: all 0.2s ease;
+}
+.report-item.active {
+  background: #dbeafe;
+  border-color: #1976d2;
+  color: #0b3b82;
+}
+
+.logo-preview {
+  min-height: 90px;
+  border: 1px dashed #b8c5d6;
+  border-radius: 12px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  text-align: center;
+  color: #64748b;
+  font-size: 11px;
+}
+.logo-preview img {
+  max-width: 100%;
+  max-height: 80px;
+  object-fit: contain;
+}
+
+.kpi {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.kpi-box {
+  background: #f8fafc;
+  border: 1px solid #dbe4ef;
+  border-radius: 10px;
+  padding: 8px 4px;
+  text-align: center;
+}
+.kpi-label { font-size: 8px; color: #64748b; font-weight: 800; }
+.kpi-value { font-size: 16px; font-weight: 900; margin-top: 2px; }
+
+.table-wrap { overflow: auto; }
+table.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  border: 1px solid #94a3b8;
+}
+table.report-table th {
+  background: #eef4fb;
+  padding: 8px;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border: 1px solid #94a3b8;
+  font-weight: 800;
+}
+table.report-table td {
+  padding: 7px;
+  border: 1px solid #cbd5e1;
+  vertical-align: middle;
+}
+
+.filter-cetak {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  margin: 0 0 3px;
+  color: #334155;
+}
+
+.principal {
+  width: 260px;
+  margin: 28px 10px 0 auto;
+  text-align: left;
+  font-size: 11px;
+  min-height: 90px;
+}
+
+.badge-status {
+  display: inline-block;
+  padding: 3px 6px;
+  border-radius: 12px;
+  font-size: 9px;
+  font-weight: 800;
+}
+.badge-status.hadir { background: #dcfce7; color: #166534; }
+.badge-status.terlambat { background: #fef3c7; color: #92400e; }
+.badge-status.bolos, .badge-status.alpa { background: #fee2e2; color: #991b1b; }
+.badge-status.sakit { background: #ede9fe; color: #5b21b6; }
+.badge-status.izin { background: #dbeafe; color: #1d4ed8; }
+.badge-status.kegiatan { background: #cffafe; color: #155e75; }
+
+.kop {
+  text-align: center;
+  border-bottom: 3px double #111;
+  padding-bottom: 4px;
+  margin-bottom: 12px;
+}
+.kop img { max-width: 95%; max-height: 80px; object-fit: contain; }
+
+/* ==========================================================================
+   4. LAYOUT MEDIA PRINT (UNTUK CETAK KARTU & LAPORAN)
+   ========================================================================== */
+@media print {
+  html, body {
+    background: #fff !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .no-print, #app-viewport-container > header, #app-viewport-container > nav {
+    display: none !important;
+  }
+  
+  #app-viewport-container {
+    max-width: none !important;
+    height: auto !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Cetak Kartu Pelajar A4 */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, 85.6mm);
+    gap: 1mm 2mm;
+    width: 180mm;
+    margin: 0 auto;
+  }
+  .card-page {
+    width: 210mm;
+    min-height: 297mm;
+    display: grid;
+    grid-template-columns: repeat(2, 85.6mm);
+    grid-template-rows: repeat(5, 53.98mm);
+    gap: 1mm 2mm;
+    align-content: center;
+    justify-content: center;
+    page-break-after: always;
+  }
+  .card-page:last-child { page-break-after: auto; }
+  .card { box-shadow: none; page-break-inside: avoid; }
+
+  /* Cetak Laporan */
+  .report-page { page-break-after: auto; }
+  .kpi { display: none !important; }
+  table.report-table { font-size: 10px; border: 1px solid #64748b; }
+  table.report-table th, table.report-table td { padding: 5px; }
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+}
